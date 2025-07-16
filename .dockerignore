@@ -1,0 +1,10 @@
+kuadrant-mcp-server
+*.exe
+*.test
+*.out
+.git
+.gitignore
+README.md
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  kuadrant-mcp:
+    build: .
+    image: kuadrant-mcp-server:latest
+    stdin_open: true
+    tty: true
+    # MCP servers communicate via stdio, so we keep stdin open
+    # To use with an MCP client, you would typically run:
+    # docker run -i kuadrant-mcp-server:latest

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "kuadrant-mcp": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "kuadrant-mcp-server:latest"],
+      "env": {}
+    }
+  }
+}
