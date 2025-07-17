@@ -1,6 +1,6 @@
 # Kuadrant MCP Server
 
-A Model Context Protocol (MCP) server that generates Kuadrant policy manifests in YAML format. Designed to work alongside Kubernetes MCP servers like [k8s-mcp-server](https://github.com/reza-gholizade/k8s-mcp-server) or [mcp-kubernetes](https://mcp.so/server/mcp-kubernetes/) for applying resources to clusters.
+A Model Context Protocol (MCP) server that generates Kuadrant policy manifests in YAML format. Designed to work alongside Kubernetes MCP servers like [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes) for applying resources to clusters.
 
 ## Demo
 
@@ -9,19 +9,13 @@ A Model Context Protocol (MCP) server that generates Kuadrant policy manifests i
 ## Quick Start (Claude Code CLI)
 
 ```bash
-# Clone and build
-git clone https://github.com/jasonmadigan/kuadrant-mcp-server
-cd kuadrant-mcp-server
-go build -o kuadrant-mcp-server
+# Add the MCP server using Docker (available in all projects)
+claude mcp add kuadrant docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -s user
 
-# Add to Claude Code (project-scoped)
-claude mcp add kuadrant ./kuadrant-mcp-server
-
-# Or add for your user (available in all projects)
-claude mcp add kuadrant $(pwd)/kuadrant-mcp-server -s user
-
-# Verify and use
+# Verify installation
 claude mcp list
+
+# Start using
 claude  # Start new session, type /mcp to see available servers
 ```
 
@@ -42,6 +36,9 @@ go install github.com/jasonmadigan/kuadrant-mcp-server@latest
 ```
 
 ### Using Docker
+
+The server is available as a Docker image from GitHub Container Registry:
+
 ```bash
 docker pull ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
 ```
@@ -82,7 +79,9 @@ kuadrant-mcp-server -transport http -addr :8080
 
 ### With Docker
 
-#### stdio transport
+Using the pre-built image from GitHub Container Registry:
+
+#### stdio transport (default)
 ```bash
 docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
 ```
@@ -105,12 +104,25 @@ docker-compose up
 ### MCP Client Configuration
 
 #### For stdio transport (Claude Desktop, CLI tools)
+
+Using the pre-built Docker image:
 ```json
 {
   "mcpServers": {
-    "kuadrant-mcp": {
+    "kuadrant": {
       "command": "docker",
       "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
+    }
+  }
+}
+```
+
+Or if running the binary directly:
+```json
+{
+  "mcpServers": {
+    "kuadrant": {
+      "command": "/path/to/kuadrant-mcp-server"
     }
   }
 }
@@ -353,10 +365,10 @@ For a complete Kubernetes workflow, you can combine this server with the Kuberne
 
 ```bash
 # Install globally
-npm install -g mcp-server-kubernetes
+npm install -g @flux159/mcp-server-kubernetes
 
 # Or use directly with npx
-npx mcp-server-kubernetes
+npx @flux159/mcp-server-kubernetes
 ```
 
 The Kubernetes MCP server will:
@@ -370,6 +382,23 @@ The Kubernetes MCP server will:
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
+Using Docker (recommended):
+```json
+{
+  "mcpServers": {
+    "kuadrant": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
+    },
+    "kubernetes": {
+      "command": "npx",
+      "args": ["mcp-server-kubernetes"]
+    }
+  }
+}
+```
+
+Or using the binary directly:
 ```json
 {
   "mcpServers": {
@@ -547,32 +576,25 @@ cd kuadrant-mcp-server
 go build -o kuadrant-mcp-server
 ```
 
-## Docker Usage
-
-### Build the Docker image
-
-```bash
-docker build -t kuadrant-mcp-server:latest .
-```
-
-### Run with Docker
-
-Since MCP servers communicate via stdio, run interactively:
-
-```bash
-docker run -i kuadrant-mcp-server:latest
-```
-
-### Use with docker-compose
-
-```bash
-docker-compose build
-docker-compose run --rm kuadrant-mcp
-```
 
 ## Claude Code CLI Setup
 
 To use this server with Claude Code CLI:
+
+### Option 1: Using Docker (Recommended)
+
+```bash
+# Add using Docker image
+claude mcp add kuadrant docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -s user
+
+# Verify installation
+claude mcp list
+
+# Start using
+claude  # Start new session, type /mcp to see available servers
+```
+
+### Option 2: Using Local Binary
 
 1. **Build the server**
    ```bash
@@ -754,19 +776,19 @@ rates:
 
 To use this server with an MCP client (like Claude Desktop), add it to your MCP configuration:
 
+Using the pre-built Docker image:
 ```json
 {
   "mcpServers": {
     "kuadrant": {
       "command": "docker",
-      "args": ["run", "-i", "kuadrant-mcp-server:latest"]
+      "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
     }
   }
 }
 ```
 
-Or if running locally:
-
+Or if running the binary locally:
 ```json
 {
   "mcpServers": {
