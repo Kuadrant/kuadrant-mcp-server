@@ -140,6 +140,34 @@ Or if running the binary directly:
 }
 ```
 
+## Available Resources
+
+The MCP server provides comprehensive documentation and examples through resources:
+
+### Documentation Resources
+- `kuadrant://docs/gateway-api` - Gateway API overview and Kuadrant integration
+- `kuadrant://docs/dnspolicy` - Complete DNSPolicy reference with examples
+- `kuadrant://docs/ratelimitpolicy` - RateLimitPolicy patterns and advanced usage
+- `kuadrant://docs/authpolicy` - AuthPolicy authentication and authorization methods
+- `kuadrant://docs/tlspolicy` - TLSPolicy certificate management guide
+
+### Example Resources
+- `kuadrant://examples/basic-setup` - Simple API with rate limiting and API key auth
+- `kuadrant://examples/production-setup` - Full production setup with TLS, DNS, JWT auth
+
+### Troubleshooting
+- `kuadrant://troubleshooting` - Common issues, debugging techniques, and solutions
+
+Access these resources in Claude by asking questions like:
+- "Show me the Kuadrant rate limiting documentation"
+- "How do I set up production TLS with Kuadrant?"
+- "Help me troubleshoot my AuthPolicy not working"
+
+**Note**: Claude may not always use resources automatically. To ensure resource usage:
+- Be specific about wanting documentation or examples
+- Reference Kuadrant policies by name (e.g., "RateLimitPolicy", "AuthPolicy")
+- Ask for "complete examples" or "troubleshooting guide"
+
 ## Available Tools
 
 ### `create_gateway`
@@ -392,7 +420,7 @@ Using Docker (recommended):
     },
     "kubernetes": {
       "command": "npx",
-      "args": ["mcp-server-kubernetes"]
+      "args": ["@flux159/mcp-server-kubernetes"]
     }
   }
 }
@@ -407,7 +435,7 @@ Or using the binary directly:
     },
     "kubernetes": {
       "command": "npx",
-      "args": ["mcp-server-kubernetes"]
+      "args": ["@flux159/mcp-server-kubernetes"]
     }
   }
 }
@@ -420,7 +448,7 @@ Or using the binary directly:
 claude mcp add kuadrant /path/to/kuadrant-mcp-server -s user
 
 # Add Kubernetes server
-claude mcp add kubernetes npx mcp-server-kubernetes -s user
+claude mcp add kubernetes npx @flux159/mcp-server-kubernetes -s user
 ```
 
 ### Safe Mode
@@ -433,7 +461,7 @@ To prevent destructive operations, run the Kubernetes server in safe mode:
   "mcpServers": {
     "kubernetes": {
       "command": "npx",
-      "args": ["mcp-server-kubernetes"],
+      "args": ["@flux159/mcp-server-kubernetes"],
       "env": {
         "ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS": "true"
       }
@@ -442,7 +470,7 @@ To prevent destructive operations, run the Kubernetes server in safe mode:
 }
 
 # Or with Claude Code CLI:
-ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS=true npx mcp-server-kubernetes
+ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS=true npx @flux159/mcp-server-kubernetes
 ```
 
 ### Example Workflow
