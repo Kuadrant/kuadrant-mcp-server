@@ -728,6 +728,200 @@ listeners:
 	}, nil
 }
 
+// TokenRateLimitPolicy resource handler
+func tokenRateLimitPolicyResourceHandler(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
+	log.Printf("[KUADRANT MCP] Resource requested: %s", params.URI)
+	content := `# TokenRateLimitPolicy Reference
+
+TokenRateLimitPolicy is a Kuadrant policy for rate limiting based on token consumption (e.g., AI/LLM tokens).
+
+## Overview
+
+TokenRateLimitPolicy enables rate limiting based on token usage from AI/LLM responses. It automatically tracks token consumption by monitoring the usage.total_tokens field in response bodies.
+
+## Basic Example
+
+` + "```yaml" + `
+apiVersion: kuadrant.io/v1
+kind: TokenRateLimitPolicy
+metadata:
+  name: ai-rate-limit
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: ai-service
+  limits:
+    "users":
+      rates:
+      - limit: 10000
+        window: 1h
+      counters:
+      - expression: "auth.identity.sub"
+` + "```" + `
+
+## Key Features
+
+- **Token-based limiting**: Tracks actual token consumption from AI/LLM responses
+- **User-specific limits**: Use counters to apply limits per user or API key
+- **Flexible windows**: Support for various time windows (1m, 1h, 24h, etc.)
+- **CEL expressions**: Use Common Expression Language for dynamic conditions
+
+For complete documentation, see: https://docs.kuadrant.io/latest/kuadrant-operator/doc/reference/tokenratelimitpolicy/
+`
+
+	return &mcp.ReadResourceResult{
+		Contents: []*mcp.ResourceContents{
+			{
+				URI:      params.URI,
+				MIMEType: "text/plain",
+				Text:     content,
+			},
+		},
+	}, nil
+}
+
+// Kuadrant CR resource handler
+func kuadrantResourceHandler(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
+	log.Printf("[KUADRANT MCP] Resource requested: %s", params.URI)
+	content := `# Kuadrant Custom Resource
+
+The Kuadrant CR is the main custom resource for configuring the Kuadrant operator.
+
+## Overview
+
+The Kuadrant custom resource configures the Kuadrant operator instance, including:
+- Observability settings
+- mTLS configuration between components
+- Component deployment options
+
+## Basic Example
+
+` + "```yaml" + `
+apiVersion: kuadrant.io/v1beta1
+kind: Kuadrant
+metadata:
+  name: kuadrant
+  namespace: kuadrant-system
+spec:
+  observability:
+    enable: true
+  mtls:
+    enable: true
+    limitador: true
+    authorino: true
+` + "```" + `
+
+## Features
+
+### Observability
+Enables metrics and tracing for Kuadrant components:
+- Prometheus metrics
+- OpenTelemetry tracing
+- Component health monitoring
+
+### mTLS Configuration
+Secures communication between:
+- Gateway and Limitador (rate limiting)
+- Gateway and Authorino (auth)
+- Inter-component communication
+
+For complete documentation, see: https://docs.kuadrant.io/latest/kuadrant-operator/doc/reference/kuadrant/
+`
+
+	return &mcp.ReadResourceResult{
+		Contents: []*mcp.ResourceContents{
+			{
+				URI:      params.URI,
+				MIMEType: "text/plain",
+				Text:     content,
+			},
+		},
+	}, nil
+}
+
+// Authorino Features resource handler
+func authorinoFeaturesResourceHandler(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
+	log.Printf("[KUADRANT MCP] Resource requested: %s", params.URI)
+	content := `# Authorino Features
+
+Authorino is Kuadrant's authorization service that implements AuthPolicy.
+
+## Core Features
+
+### Authentication Methods
+- **API Keys**: Simple key-based authentication
+- **JWT/OIDC**: OpenID Connect token validation
+- **mTLS**: Mutual TLS certificate authentication
+- **Kubernetes tokens**: TokenReview integration
+- **OAuth 2.0**: Token introspection
+- **Plain HTTP**: Basic/custom authentication
+
+### Authorization Methods
+- **OPA/Rego**: Open Policy Agent policies
+- **Pattern matching**: JSON pattern authorization
+- **Kubernetes RBAC**: SubjectAccessReview
+- **External HTTP**: Webhook authorization
+- **CEL expressions**: Common Expression Language rules
+
+### Additional Capabilities
+- **Metadata injection**: Enrich requests with external data
+- **Response manipulation**: Modify responses dynamically
+- **Rate limit integration**: Pass identity to rate limiter
+- **Caching**: Cache auth decisions for performance
+- **Metrics & tracing**: Observability integration
+
+## Example: Multi-method Authentication
+
+` + "```yaml" + `
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: multi-auth
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: api
+  rules:
+    authentication:
+      "api-key":
+        apiKey:
+          selector:
+            matchLabels:
+              app: myapp
+      "jwt":
+        jwt:
+          issuerUrl: https://auth.example.com
+    authorization:
+      "rbac":
+        patternMatching:
+          patterns:
+          - selector: auth.identity.role
+            operator: eq
+            value: admin
+    response:
+      success:
+        headers:
+          "x-user-id":
+            value: auth.identity.sub
+` + "```" + `
+
+For complete documentation, see: https://docs.kuadrant.io/latest/authorino/docs/features/
+`
+
+	return &mcp.ReadResourceResult{
+		Contents: []*mcp.ResourceContents{
+			{
+				URI:      params.URI,
+				MIMEType: "text/plain",
+				Text:     content,
+			},
+		},
+	}, nil
+}
+
 // New example resources
 func exampleBasicSetupResourceHandler(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
 	log.Printf("[KUADRANT MCP] Resource requested: %s", params.URI)
@@ -1444,6 +1638,33 @@ func addKuadrantResources(server *mcp.Server) {
 				MIMEType:    "text/plain",
 			},
 			Handler: tlsPolicyResourceHandler,
+		},
+		&mcp.ServerResource{
+			Resource: &mcp.Resource{
+				URI:         "kuadrant://docs/tokenratelimitpolicy",
+				Name:        "TokenRateLimitPolicy Reference",
+				Description: "Token-based rate limiting for AI/LLM services",
+				MIMEType:    "text/plain",
+			},
+			Handler: tokenRateLimitPolicyResourceHandler,
+		},
+		&mcp.ServerResource{
+			Resource: &mcp.Resource{
+				URI:         "kuadrant://docs/kuadrant",
+				Name:        "Kuadrant CR Reference",
+				Description: "Main Kuadrant custom resource configuration",
+				MIMEType:    "text/plain",
+			},
+			Handler: kuadrantResourceHandler,
+		},
+		&mcp.ServerResource{
+			Resource: &mcp.Resource{
+				URI:         "kuadrant://docs/authorino-features",
+				Name:        "Authorino Features",
+				Description: "Complete guide to Authorino authentication and authorization features",
+				MIMEType:    "text/plain",
+			},
+			Handler: authorinoFeaturesResourceHandler,
 		},
 	)
 
