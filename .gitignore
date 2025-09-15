@@ -37,3 +37,11 @@ Thumbs.db
 /kuadrant-mcp-server
 /dist/
 /build/
+
+# Documentation temp files
+.docs-temp/
+.docs-config-temp/
+.kuadrant-operator-temp/
+.authorino-temp/
+extracted-docs/
+resources-generated.go

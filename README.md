@@ -800,6 +800,28 @@ rates:
 ```
 
 
+## Updating Documentation
+
+The server includes embedded documentation from the official Kuadrant repositories. To update to the latest docs:
+
+```bash
+# Extract latest documentation from source repos
+./update-docs.sh
+
+# (Optional) Generate Go code from the extracted docs
+go run process-docs.go
+
+# Review and integrate changes as needed
+```
+
+The update script:
+- Reads the mkdocs.yml configuration from docs.kuadrant.io
+- Extracts only the files actually published on the docs site
+- Preserves the original directory structure
+- Creates a summary of all extracted files
+
+For more details, see [UPDATE_DOCS.md](UPDATE_DOCS.md).
+
 ## MCP Configuration
 
 To use this server with an MCP client (like Claude Desktop), add it to your MCP configuration:
