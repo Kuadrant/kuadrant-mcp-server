@@ -56,8 +56,8 @@ jobs:
             type=ref,event=branch
             # pr-123 for pull requests
             type=ref,event=pr
-            # short sha for all builds
-            type=sha,prefix={{branch}}-
+            # short sha for commits (no prefix for tags)
+            type=sha,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

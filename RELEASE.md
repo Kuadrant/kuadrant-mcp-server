@@ -17,6 +17,10 @@ Follow semantic versioning (MAJOR.MINOR.PATCH):
 - MINOR: New features, backward compatible
 - PATCH: Bug fixes, documentation updates
 
+**Important**: Tags must be valid semver format:
+- Correct: `0.2.0`, `1.0.0`, `v1.2.3`
+- Wrong: `0.2`, `1.0`, `v1.2`
+
 ### 2. Create GitHub Release
 
 #### Option A: Via GitHub UI

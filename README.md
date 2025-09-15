@@ -760,14 +760,14 @@ If you don't see logs:
 
 If you get errors like "unknown field spec.limits.xxx.rates[0].duration", make sure your rate limits use the correct format:
 
-✅ **Correct:**
+**Correct:**
 ```yaml
 rates:
 - limit: 100
   window: 60s    # or "1m", "5m", "1h", etc.
 ```
 
-❌ **Incorrect:**
+**Incorrect:**
 ```yaml
 rates:
 - limit: 100
