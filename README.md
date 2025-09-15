@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that generates Kuadrant policy manifests i
 
 ```bash
 # Add the MCP server using Docker (available in all projects)
-claude mcp add kuadrant docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -s user
+claude mcp add kuadrant docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest -s user
 
 # Verify installation
 claude mcp list
@@ -32,7 +32,7 @@ All manifests are generated in YAML format, matching the actual Kuadrant CRD spe
 
 ### Using Go
 ```bash
-go install github.com/jasonmadigan/kuadrant-mcp-server@latest
+go install github.com/kuadrant/kuadrant-mcp-server@latest
 ```
 
 ### Using Docker
@@ -40,12 +40,12 @@ go install github.com/jasonmadigan/kuadrant-mcp-server@latest
 The server is available as a Docker image from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
+docker pull ghcr.io/kuadrant/kuadrant-mcp-server:latest
 ```
 
 ### Building from Source
 ```bash
-git clone https://github.com/jasonmadigan/kuadrant-mcp-server
+git clone https://github.com/kuadrant/kuadrant-mcp-server
 cd kuadrant-mcp-server
 docker build -t kuadrant-mcp-server:latest .
 ```
@@ -83,17 +83,17 @@ Using the pre-built image from GitHub Container Registry:
 
 #### stdio transport (default)
 ```bash
-docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
+docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 ```
 
 #### SSE transport
 ```bash
-docker run -i --rm -p 8080:8080 ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -transport sse -addr :8080
+docker run -i --rm -p 8080:8080 ghcr.io/kuadrant/kuadrant-mcp-server:latest -transport sse -addr :8080
 ```
 
 #### StreamableHTTP transport
 ```bash
-docker run -i --rm -p 8080:8080 ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -transport http -addr :8080
+docker run -i --rm -p 8080:8080 ghcr.io/kuadrant/kuadrant-mcp-server:latest -transport http -addr :8080
 ```
 
 ### With Docker Compose
@@ -111,7 +111,7 @@ Using the pre-built Docker image:
   "mcpServers": {
     "kuadrant": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
+      "args": ["run", "-i", "--rm", "ghcr.io/kuadrant/kuadrant-mcp-server:latest"]
     }
   }
 }
@@ -416,7 +416,7 @@ Using Docker (recommended):
   "mcpServers": {
     "kuadrant": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
+      "args": ["run", "-i", "--rm", "ghcr.io/kuadrant/kuadrant-mcp-server:latest"]
     },
     "kubernetes": {
       "command": "npx",
@@ -599,7 +599,7 @@ spec:
 ## Building from Source
 
 ```bash
-git clone https://github.com/jasonmadigan/kuadrant-mcp-server
+git clone https://github.com/kuadrant/kuadrant-mcp-server
 cd kuadrant-mcp-server
 go build -o kuadrant-mcp-server
 ```
@@ -613,7 +613,7 @@ To use this server with Claude Code CLI:
 
 ```bash
 # Add using Docker image
-claude mcp add kuadrant docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest -s user
+claude mcp add kuadrant docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest -s user
 
 # Verify installation
 claude mcp list
@@ -832,7 +832,7 @@ Using the pre-built Docker image:
   "mcpServers": {
     "kuadrant": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/jasonmadigan/kuadrant-mcp-server:latest"]
+      "args": ["run", "-i", "--rm", "ghcr.io/kuadrant/kuadrant-mcp-server:latest"]
     }
   }
 }
