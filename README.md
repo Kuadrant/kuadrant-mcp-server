@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that generates Kuadrant policy manifests i
 
 ```bash
 # Add the MCP server using Docker (available in all projects)
-claude mcp add kuadrant docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest -s user
+claude mcp add -s user kuadrant "docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest"
 
 # Verify installation
 claude mcp list
@@ -47,6 +47,11 @@ docker pull ghcr.io/kuadrant/kuadrant-mcp-server:latest
 ```bash
 git clone https://github.com/kuadrant/kuadrant-mcp-server
 cd kuadrant-mcp-server
+
+# Build binary
+go build -o kuadrant-mcp-server
+
+# Or build Docker image
 docker build -t kuadrant-mcp-server:latest .
 ```
 
@@ -596,15 +601,6 @@ spec:
 - RateLimitPolicy: `kuadrant.io/v1`
 - AuthPolicy: `kuadrant.io/v1`
 
-## Building from Source
-
-```bash
-git clone https://github.com/kuadrant/kuadrant-mcp-server
-cd kuadrant-mcp-server
-go build -o kuadrant-mcp-server
-```
-
-
 ## Claude Code CLI Setup
 
 To use this server with Claude Code CLI:
@@ -613,7 +609,7 @@ To use this server with Claude Code CLI:
 
 ```bash
 # Add using Docker image
-claude mcp add kuadrant docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest -s user
+claude mcp add -s user kuadrant "docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest"
 
 # Verify installation
 claude mcp list
@@ -624,36 +620,16 @@ claude  # Start new session, type /mcp to see available servers
 
 ### Option 2: Using Local Binary
 
-1. **Build the server**
-   ```bash
-   go build -o kuadrant-mcp-server
-   ```
+```bash
+# Build the server
+go build -o kuadrant-mcp-server
 
-2. **Add to Claude Code**
-   ```bash
-   claude mcp add kuadrant /path/to/kuadrant-mcp-server
-   ```
+# Add to Claude Code
+claude mcp add -s user kuadrant ./kuadrant-mcp-server
 
-   For example:
-   ```bash
-   claude mcp add kuadrant /Users/yourusername/kuadrant-mcp-server/kuadrant-mcp-server
-   ```
-
-3. **Verify installation**
-   ```bash
-   claude mcp list
-   ```
-
-4. **Test in Claude**
-   Start a new Claude session and type:
-   ```
-   /mcp
-   ```
-   
-   You should see "kuadrant" listed. Then try:
-   ```
-   Create a Gateway manifest named 'test-gateway' in namespace 'default'
-   ```
+# Start using
+claude  # Start new session, type /mcp to see available servers
+```
 
 ### Troubleshooting
 
@@ -822,33 +798,25 @@ The update script:
 
 For more details, see [UPDATE_DOCS.md](UPDATE_DOCS.md).
 
-## MCP Configuration
+## Releases and Versioning
 
-To use this server with an MCP client (like Claude Desktop), add it to your MCP configuration:
+See [RELEASE.md](RELEASE.md) for detailed release procedures.
 
-Using the pre-built Docker image:
-```json
-{
-  "mcpServers": {
-    "kuadrant": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/kuadrant/kuadrant-mcp-server:latest"]
-    }
-  }
-}
+**Available versions:**
+- `:latest` - Tracks main branch (may be unstable)
+- `:1.2.3` - Specific version (recommended for production)
+- `:1.2` - Latest patch in minor version
+- `:1` - Latest release in major version
+
+**Creating releases:**
+```bash
+# Tag and push
+git tag -a v1.2.3 -m "Release v1.2.3"
+git push origin v1.2.3
+
+# GitHub automatically builds and publishes Docker images
 ```
 
-Or if running the binary locally:
-```json
-{
-  "mcpServers": {
-    "kuadrant": {
-      "command": "/path/to/kuadrant-mcp-server"
-    }
-  }
-}
-```
-
-## License
+## Licence
 
 Apache 2.0
