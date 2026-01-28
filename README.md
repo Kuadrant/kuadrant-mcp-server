@@ -74,6 +74,20 @@ docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
 **Rate limit format**: Use `limit` and `window` fields (e.g., `"limit": 100, "window": "60s"`).
 
+### Example Prompts
+
+```
+Create a Gateway named 'api-gateway' in namespace 'production' with HTTPS on port 443
+
+Create a RateLimitPolicy for HTTPRoute 'api-route' that limits to 100 requests per minute
+
+Set up an AuthPolicy requiring JWT auth from https://auth.example.com
+
+Show me the Kuadrant rate limiting documentation
+
+Help me configure DNS with Route53 for my gateway
+```
+
 ## Resources
 
 Documentation is fetched from upstream repos and cached for 15 minutes.
