@@ -1,116 +1,54 @@
 # Kuadrant MCP Server
 
-A Model Context Protocol (MCP) server that generates Kuadrant policy manifests in YAML format. Designed to work alongside Kubernetes MCP servers like [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes) for applying resources to clusters.
-
-## Demo
+A Model Context Protocol (MCP) server that generates Kuadrant policy manifests. Designed to work alongside [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes) for applying resources to clusters.
 
 ![Kuadrant MCP Server Demo](kuadrant-mcp-server-demo.gif)
 
-## Quick Start (Claude Code CLI)
+## Quick Start
 
 ```bash
-# Add the MCP server using Docker (available in all projects)
+# Add the MCP server (available in all projects)
 claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
-# Verify installation
+# Verify
 claude mcp list
 
 # Start using
-claude  # Start new session, type /mcp to see available servers
+claude
 ```
-
-## Overview
-
-This MCP server generates Kuadrant-specific Kubernetes manifests:
-- Gateway resources with Kuadrant annotations
-- HTTPRoute configurations
-- Kuadrant policies (DNS, TLS, RateLimit, TokenRateLimit, Auth)
-
-All manifests are generated in YAML format, matching the actual Kuadrant CRD specifications.
 
 ## Installation
 
-### Using Go
 ```bash
-go install github.com/kuadrant/kuadrant-mcp-server@latest
-```
-
-### Using Docker
-
-The server is available as a Docker image from GitHub Container Registry:
-
-```bash
+# Docker (recommended)
 docker pull ghcr.io/kuadrant/kuadrant-mcp-server:latest
-```
 
-### Building from Source
-```bash
-git clone https://github.com/kuadrant/kuadrant-mcp-server
-cd kuadrant-mcp-server
+# Go
+go install github.com/kuadrant/kuadrant-mcp-server@latest
 
-# Build binary
+# From source
+git clone https://github.com/kuadrant/kuadrant-mcp-server && cd kuadrant-mcp-server
 go build -o kuadrant-mcp-server
-
-# Or build Docker image
-docker build -t kuadrant-mcp-server:latest .
 ```
 
 ## Usage
 
-### Transport Options
-
-The server supports multiple transport protocols:
-
-1. **stdio** (default) - Standard input/output for CLI integration
-2. **sse** - Server-Sent Events for web-based clients
-3. **http** - Streamable HTTP for modern web applications
-
-### Standalone
-
-#### Using stdio transport (default)
 ```bash
-kuadrant-mcp-server
-```
+# stdio (default)
+./kuadrant-mcp-server
 
-#### Using SSE transport
-```bash
-kuadrant-mcp-server -transport sse -addr :8080
-```
+# SSE transport
+./kuadrant-mcp-server -transport sse -addr :8080
 
-#### Using StreamableHTTP transport
-```bash
-kuadrant-mcp-server -transport http -addr :8080
-```
+# HTTP transport
+./kuadrant-mcp-server -transport http -addr :8080
 
-### With Docker
-
-Using the pre-built image from GitHub Container Registry:
-
-#### stdio transport (default)
-```bash
+# Docker
 docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
-```
-
-#### SSE transport
-```bash
-docker run -i --rm -p 8080:8080 ghcr.io/kuadrant/kuadrant-mcp-server:latest -transport sse -addr :8080
-```
-
-#### StreamableHTTP transport
-```bash
-docker run -i --rm -p 8080:8080 ghcr.io/kuadrant/kuadrant-mcp-server:latest -transport http -addr :8080
-```
-
-### With Docker Compose
-```bash
-docker-compose up
 ```
 
 ### MCP Client Configuration
 
-#### For stdio transport (Claude Desktop, CLI tools)
-
-Using the pre-built Docker image:
 ```json
 {
   "mcpServers": {
@@ -122,725 +60,66 @@ Using the pre-built Docker image:
 }
 ```
 
-Or if running the binary directly:
-```json
-{
-  "mcpServers": {
-    "kuadrant": {
-      "command": "/path/to/kuadrant-mcp-server"
-    }
-  }
-}
-```
+## Tools
 
-#### For HTTP transports (web applications)
-```json
-{
-  "mcpServers": {
-    "kuadrant-mcp": {
-      "url": "http://localhost:8080",
-      "transport": "streamablehttp"  // or "sse" for SSE transport
-    }
-  }
-}
-```
+| Tool | Description |
+|------|-------------|
+| `create_gateway` | Gateway manifest with Kuadrant annotations |
+| `create_httproute` | HTTPRoute manifest |
+| `create_dnspolicy` | DNSPolicy for DNS management |
+| `create_tlspolicy` | TLSPolicy for certificate management |
+| `create_ratelimitpolicy` | RateLimitPolicy for rate limiting |
+| `create_tokenratelimitpolicy` | TokenRateLimitPolicy for AI/LLM APIs |
+| `create_authpolicy` | AuthPolicy for authentication/authorisation |
 
-## Available Resources
+**Rate limit format**: Use `limit` and `window` fields (e.g., `"limit": 100, "window": "60s"`).
 
-Documentation is fetched from upstream GitHub repos (kuadrant-operator, authorino) and cached for 15 minutes. This keeps docs.kuadrant.io as the single source of truth.
+## Resources
 
-### Policy References
-- `kuadrant://docs/gateway-api` - Gateway API overview
-- `kuadrant://docs/dnspolicy` - DNSPolicy reference
-- `kuadrant://docs/ratelimitpolicy` - RateLimitPolicy reference
-- `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy reference
-- `kuadrant://docs/authpolicy` - AuthPolicy reference
-- `kuadrant://docs/tlspolicy` - TLSPolicy reference
-- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy reference
-- `kuadrant://docs/kuadrant` - Kuadrant CR reference
-- `kuadrant://docs/authorino-features` - Authorino features
+Documentation is fetched from upstream repos and cached for 15 minutes.
 
-### Extensions
-- `kuadrant://docs/planpolicy` - PlanPolicy (plan-based rate limiting)
-
-### User Guides
-- `kuadrant://docs/secure-protect-connect` - Full walkthrough
-- `kuadrant://docs/simple-ratelimiting` - Simple rate limiting guide
-- `kuadrant://docs/auth-for-developers` - Auth for app devs
-
-Access these resources in Claude by asking questions like:
-- "Show me the Kuadrant rate limiting documentation"
-- "How do I set up production TLS with Kuadrant?"
-- "Help me troubleshoot my AuthPolicy not working"
-
-**Note**: Claude may not always use resources automatically. To ensure resource usage:
-- Be specific about wanting documentation or examples
-- Reference Kuadrant policies by name (e.g., "RateLimitPolicy", "TokenRateLimitPolicy", "AuthPolicy")
-- Ask for "complete examples" or "troubleshooting guide"
-
-## Available Tools
-
-### `create_gateway`
-Generate a Gateway manifest with Kuadrant annotations.
-
-**Arguments:**
-- `name` (required): Gateway name
-- `namespace` (required): Namespace
-- `gatewayClassName`: Gateway class (default: "istio")
-- `listeners`: Array of listener configurations
-- `kuadrantEnabled`: Enable Kuadrant annotations (default: true)
-
-**Example Output:**
-```yaml
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  annotations:
-    kuadrant.io/policy: enabled
-  name: prod-gateway
-  namespace: production
-spec:
-  gatewayClassName: istio
-  listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    hostname: "*.example.com"
-```
-
-### `create_httproute`
-Generate an HTTPRoute manifest.
-
-**Arguments:**
-- `name` (required): Route name
-- `namespace` (required): Namespace
-- `parentRefs` (required): Parent gateway references
-- `hostnames`: List of hostnames
-- `rules`: Routing rules
-
-**Example Output:**
-```yaml
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: api-route
-  namespace: production
-spec:
-  parentRefs:
-  - name: prod-gateway
-  hostnames:
-  - api.example.com
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /api
-    backendRefs:
-    - name: api-service
-      port: 8080
-```
-
-### `create_dnspolicy`
-Generate a Kuadrant DNSPolicy manifest.
-
-**Arguments:**
-- `name` (required): Policy name
-- `namespace` (required): Namespace
-- `targetRef` (required): Target resource reference
-- `providerRefs` (required): DNS provider references
-- `loadBalancing`: Load balancing configuration
-- `healthCheck`: Health check configuration
-
-**Example Output:**
-```yaml
-apiVersion: kuadrant.io/v1
-kind: DNSPolicy
-metadata:
-  name: prod-dns
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: prod-gateway
-  providerRefs:
-  - name: aws-dns-credentials
-  loadBalancing:
-    defaultGeo: true
-    weight: 100
-    geo: US
-  healthCheck:
-    path: /health
-    failureThreshold: 3
-    interval: 5min
-```
-
-### `create_tlspolicy`
-Generate a Kuadrant TLSPolicy manifest (v1alpha1).
-
-**Arguments:**
-- `name` (required): Policy name
-- `namespace` (required): Namespace
-- `targetRef` (required): Target resource reference
-- `issuerRef` (required): Certificate issuer reference
-- `commonName`: Certificate common name
-- `duration`: Certificate duration
-- `renewBefore`: Renew before expiry
-
-**Example Output:**
-```yaml
-apiVersion: kuadrant.io/v1alpha1
-kind: TLSPolicy
-metadata:
-  name: prod-tls
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: prod-gateway
-  issuerRef:
-    group: cert-manager.io
-    kind: ClusterIssuer
-    name: letsencrypt-prod
-  commonName: "*.example.com"
-  duration: 90d
-  renewBefore: 15d
-```
-
-### `create_ratelimitpolicy`
-Generate a Kuadrant RateLimitPolicy manifest.
-
-**Arguments:**
-- `name` (required): Policy name
-- `namespace` (required): Namespace
-- `targetRef` (required): Target resource reference
-- `limits`: Rate limit configurations (each limit must have a `rates` array with `limit` and `window` fields)
-- `defaults`: Default rate limits
-- `overrides`: Override rate limits
-
-**Important:** Rate limits must use the format:
-```json
-{
-  "limit-name": {
-    "rates": [
-      {
-        "limit": 100,
-        "window": "60s"  // Use time units: s, m, h (e.g., "10s", "5m", "1h")
-      }
-    ]
-  }
-}
-```
-
-**Example Output:**
-```yaml
-apiVersion: kuadrant.io/v1
-kind: RateLimitPolicy
-metadata:
-  name: api-limit
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: api-route
-  limits:
-    "global":
-      rates:
-      - limit: 5
-        window: 10s
-    "per-user":
-      rates:
-      - limit: 2
-        window: 10s
-      when:
-      - predicate: "auth.identity.userid == 'bob'"
-```
-
-### `create_authpolicy`
-Generate a Kuadrant AuthPolicy manifest.
-
-**Arguments:**
-- `name` (required): Policy name
-- `namespace` (required): Namespace
-- `targetRef` (required): Target resource reference
-- `rules`: Authentication and authorization rules
-- `defaults`: Default auth rules
-- `overrides`: Override auth rules
-
-**Example Output:**
-```yaml
-apiVersion: kuadrant.io/v1
-kind: AuthPolicy
-metadata:
-  name: api-auth
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: api-route
-  rules:
-    authentication:
-      jwt-auth:
-        jwt:
-          issuerUrl: https://auth.example.com
-    authorization:
-      api-users:
-        opa:
-          rego: |
-            allow = true {
-              input.auth.identity.groups[_] == "api-users"
-            }
-```
-
-### `create_tokenratelimitpolicy`
-Generate a Kuadrant TokenRateLimitPolicy manifest for AI/LLM API management.
-
-**Arguments:**
-- `name` (required): Policy name
-- `namespace` (required): Namespace
-- `targetRef` (required): Target resource reference
-- `limits`: Token-based rate limit configurations
-- `defaults`: Default token limits
-- `overrides`: Override token limits
-
-**Example Output:**
-```yaml
-apiVersion: kuadrant.io/v1
-kind: TokenRateLimitPolicy
-metadata:
-  name: llm-api-limits
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: llm-route
-  limits:
-    "gpt-4":
-      rates:
-      - limit: 10000
-        window: 60s
-      when:
-      - selector: request.headers.model
-        operator: eq
-        value: gpt-4
-    "gpt-3.5":
-      rates:
-      - limit: 50000
-        window: 60s
-      when:
-      - selector: request.headers.model
-        operator: eq
-        value: gpt-3.5-turbo
-```
+| Resource | Description |
+|----------|-------------|
+| `kuadrant://docs/gateway-api` | Gateway API overview |
+| `kuadrant://docs/dnspolicy` | DNSPolicy reference |
+| `kuadrant://docs/ratelimitpolicy` | RateLimitPolicy reference |
+| `kuadrant://docs/tokenratelimitpolicy` | TokenRateLimitPolicy reference |
+| `kuadrant://docs/authpolicy` | AuthPolicy reference |
+| `kuadrant://docs/tlspolicy` | TLSPolicy reference |
+| `kuadrant://docs/telemetrypolicy` | TelemetryPolicy reference |
+| `kuadrant://docs/kuadrant` | Kuadrant CR reference |
+| `kuadrant://docs/authorino-features` | Authorino features |
+| `kuadrant://docs/planpolicy` | PlanPolicy extension |
+| `kuadrant://docs/secure-protect-connect` | Full walkthrough |
+| `kuadrant://docs/simple-ratelimiting` | Rate limiting guide |
+| `kuadrant://docs/auth-for-developers` | Auth guide |
 
 ## Kubernetes Integration
 
-For a complete Kubernetes workflow, you can combine this server with the Kubernetes MCP server.
-
-### Installing Kubernetes MCP Server
+Combine with mcp-server-kubernetes for a complete workflow:
 
 ```bash
-# Install globally
-npm install -g @flux159/mcp-server-kubernetes
-
-# Or use directly with npx
-npx @flux159/mcp-server-kubernetes
-```
-
-The Kubernetes MCP server will:
-- Automatically use your `~/.kube/config`
-- Connect to your current kubectl context
-- Provide tools for managing Kubernetes resources
-
-### Configuration
-
-#### Claude Desktop
-
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-Using Docker (recommended):
-```json
-{
-  "mcpServers": {
-    "kuadrant": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "ghcr.io/kuadrant/kuadrant-mcp-server:latest"]
-    },
-    "kubernetes": {
-      "command": "npx",
-      "args": ["@flux159/mcp-server-kubernetes"]
-    }
-  }
-}
-```
-
-Or using the binary directly:
-```json
-{
-  "mcpServers": {
-    "kuadrant": {
-      "command": "/path/to/kuadrant-mcp-server"
-    },
-    "kubernetes": {
-      "command": "npx",
-      "args": ["@flux159/mcp-server-kubernetes"]
-    }
-  }
-}
-```
-
-#### Claude Code CLI
-
-```bash
-# Add Kuadrant server (using Docker)
+# Add both servers
 claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
-
-# Add Kubernetes server
 claude mcp add -s user kubernetes npx -- @flux159/mcp-server-kubernetes
 ```
 
-### Safe Mode
+Then ask Claude to generate and deploy policies in one step.
 
-To prevent destructive operations, run the Kubernetes server in safe mode:
+## API Versions
 
-```bash
-# In Claude Desktop config:
-{
-  "mcpServers": {
-    "kubernetes": {
-      "command": "npx",
-      "args": ["@flux159/mcp-server-kubernetes"],
-      "env": {
-        "ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS": "true"
-      }
-    }
-  }
-}
+| Resource | API Version |
+|----------|-------------|
+| Gateway/HTTPRoute | `gateway.networking.k8s.io/v1` |
+| DNSPolicy | `kuadrant.io/v1` |
+| TLSPolicy | `kuadrant.io/v1alpha1` |
+| RateLimitPolicy | `kuadrant.io/v1` |
+| TokenRateLimitPolicy | `kuadrant.io/v1` |
+| AuthPolicy | `kuadrant.io/v1` |
 
-# Or with Claude Code CLI:
-ALLOW_ONLY_NON_DESTRUCTIVE_TOOLS=true npx @flux159/mcp-server-kubernetes
-```
+## Adding Resources
 
-### Example Workflow
-
-With both servers configured, you can:
-
-1. **Generate and Deploy**:
-   ```
-   Create a production gateway using Kuadrant and deploy it to my Kubernetes cluster
-   ```
-
-2. **Create Complete Setup**:
-   ```
-   Create a Gateway with TLS and rate limiting policies, then apply them all to the production namespace in my Kubernetes cluster
-   ```
-
-3. **Check Status**:
-   ```
-   Show me all Gateways and their associated Kuadrant policies in my Kubernetes cluster
-   ```
-
-### Real Example
-
-```
-User: Create a production API gateway with HTTPS and rate limiting, then deploy it
-```
-
-Assistant will:
-1. Use kuadrant MCP to generate Gateway manifest
-2. Use kuadrant MCP to generate RateLimitPolicy
-3. Use kubernetes MCP to apply both manifests
-4. Use kubernetes MCP to verify deployment status
-
-## Complete Example Workflow
-
-Here's a complete example setting up a Gateway with all policies:
-
-1. **Generate Gateway**
-```yaml
-# Generated output:
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: api-route
-  namespace: production
-spec:
-  parentRefs:
-  - name: api-gateway
-  hostnames:
-  - api.example.com
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /v1
-    backendRefs:
-    - name: api-v1
-      port: 8080
-```
-
-3. **Generate DNSPolicy**
-```yaml
-# Generated output:
-apiVersion: kuadrant.io/v1
-kind: DNSPolicy
-metadata:
-  name: api-dns
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: api-gateway
-  providerRefs:
-  - name: route53-credentials
-```
-
-4. **Generate RateLimitPolicy**
-```yaml
-# Generated output:
-apiVersion: kuadrant.io/v1
-kind: RateLimitPolicy
-metadata:
-  name: api-ratelimit
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: api-route
-  limits:
-    "global":
-      rates:
-      - limit: 10
-        window: 60s
-```
-
-5. **Generate AuthPolicy**
-```yaml
-# Generated output:
-apiVersion: kuadrant.io/v1
-kind: AuthPolicy
-metadata:
-  name: api-auth
-  namespace: production
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: api-route
-  rules:
-    authentication:
-      jwt:
-        jwt:
-          issuerUrl: https://auth.example.com/realms/api
-```
-
-## API Version Reference
-
-- Gateway/HTTPRoute: `gateway.networking.k8s.io/v1`
-- DNSPolicy: `kuadrant.io/v1`
-- TLSPolicy: `kuadrant.io/v1alpha1`
-- RateLimitPolicy: `kuadrant.io/v1`
-- TokenRateLimitPolicy: `kuadrant.io/v1`
-- AuthPolicy: `kuadrant.io/v1`
-
-## Claude Code CLI Setup
-
-To use this server with Claude Code CLI:
-
-### Option 1: Using Docker (Recommended)
-
-```bash
-# Add using Docker image
-claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
-
-# Verify installation
-claude mcp list
-
-# Start using
-claude  # Start new session, type /mcp to see available servers
-```
-
-### Option 2: Using Local Binary
-
-```bash
-# Build the server
-go build -o kuadrant-mcp-server
-
-# Add to Claude Code
-claude mcp add -s user kuadrant ./kuadrant-mcp-server
-
-# Start using
-claude  # Start new session, type /mcp to see available servers
-```
-
-### Troubleshooting
-
-If `/mcp` shows "No MCP servers configured":
-- Make sure you're in the same directory where you ran `claude mcp add` (for project/local scope)
-- The MCP configuration scopes are:
-  - `local`: Private to you in the current project (default)
-  - `user`: Available to you in all projects
-  - `project`: Shared with all users in the current project
-- Try adding with the full absolute path
-- Check the server is executable: `chmod +x kuadrant-mcp-server`
-- Start a new Claude session after adding the server
-
-### Enable Logging (Optional)
-
-To see when Claude uses your MCP server:
-
-1. Use the logging wrapper script:
-   ```bash
-   chmod +x run_with_logging.sh
-   claude mcp remove kuadrant -s local
-   claude mcp add kuadrant /path/to/kuadrant-mcp-server/run_with_logging.sh
-   ```
-
-2. Monitor the logs:
-   ```bash
-   tail -f /tmp/kuadrant-mcp.log
-   ```
-
-### Testing Your Installation
-
-After setting up the MCP server, test it with these commands in Claude:
-
-1. **Verify MCP tools are available** in Claude:
-   ```
-   /mcp
-   ```
-   
-   You should see "kuadrant" listed. Then check what tools it provides:
-   ```
-   What tools does the kuadrant MCP server provide?
-   ```
-
-2. **Monitor the logs** (in a separate terminal):
-   ```bash
-   tail -f /tmp/kuadrant-mcp.log
-   ```
-
-3. **Test with natural language commands** in Claude:
-
-   ```
-   # Gateway creation
-   Create a Kuadrant Gateway named 'api-gateway' in the 'gateway-system' namespace with HTTPS enabled and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # HTTPRoute creation  
-   Create an HTTPRoute named 'api-routes' in namespace 'gateway-system' that routes traffic from gateway 'api-gateway' to service 'api-backend' on port 8080 and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # Rate limiting
-   Create a RateLimitPolicy that limits requests to 100 per minute for the HTTPRoute 'api-routes' in namespace 'gateway-system' and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # Per-user rate limiting
-   Create a RateLimitPolicy for HTTPRoute 'api-routes' that allows 5 requests per 10 seconds for user 'alice' and 2 requests per 10 seconds for user 'bob' and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # Token-based rate limiting for AI APIs
-   Create a TokenRateLimitPolicy for HTTPRoute 'llm-gateway' that limits GPT-4 to 10000 tokens per minute and GPT-3.5 to 50000 tokens per minute and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # Authentication
-   Create an AuthPolicy for HTTPRoute 'api-routes' that requires JWT authentication from issuer 'https://auth.example.com' and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # DNS management
-   Create a DNSPolicy for gateway 'api-gateway' using AWS Route53 credentials 'route53-creds' with multi-region load balancing and apply this in my Kubernetes cluster with the kubernetes tool
-
-   # TLS certificates
-   Create a TLSPolicy for gateway 'api-gateway' using Let's Encrypt to get a wildcard certificate for '*.example.com' and apply this in my Kubernetes cluster  with the kubernetes tool
-   ```
-
-   **With Kubernetes integration:**
-   ```
-   Create a production API gateway with rate limiting of 50 requests per minute and deploy it to my Kubernetes cluster with the kubernetes tool
-
-   Generate a complete Kuadrant setup with Gateway, HTTPRoute, rate limiting, and JWT auth for my API, then apply it to the 'gateway-system' namespace in my Kubernetes cluster with the kubernetes tool
-   ```
-
-4. **Common real-world scenarios**:
-
-   **E-commerce API protection:**
-   ```
-   I need to protect my e-commerce API. Create a Gateway with rate limiting that allows regular users 100 requests per minute but gives premium users 1000 requests per minute and apply this in my Kubernetes cluster
-   ```
-
-   **Multi-tenant SaaS platform:**
-   ```
-   Set up a Gateway for my SaaS platform with different rate limits per tenant: 
-   - Free tier: 10 requests per minute
-   - Pro tier: 100 requests per minute
-   - Enterprise: unlimited
-   Then apply this configuration to my Kubernetes cluster
-   ```
-
-   **Public API with authentication:**
-   ```
-   Create a public API gateway that requires API key authentication and limits each API key to 50 requests per second and deploy it to my Kubernetes cluster
-   ```
-
-   **Complete production setup:**
-   ```
-   Set up a production-ready API gateway with:
-   - HTTPS using Let's Encrypt certificates
-   - JWT authentication from Auth0
-   - Rate limiting of 1000 requests per hour per user
-   - DNS managed by Route53
-   Then deploy everything to my Kubernetes cluster
-   ```
-
-5. **What you should see in the logs**:
-   ```
-   [KUADRANT MCP] Starting server with transport=stdio
-   [KUADRANT MCP] create_gateway called with name=api-gateway, namespace=production
-   [KUADRANT MCP] create_httproute called with name=api-route, namespace=production
-   [KUADRANT MCP] create_ratelimitpolicy called with name=api-route, namespace=production
-   ```
-
-If you don't see logs:
-- Type `/mcp` in Claude - verify "kuadrant" is listed
-- Make sure you started a new Claude session after adding the server
-- Try being more explicit: "Use the kuadrant MCP server to create a Gateway"
-
-### Common Issues
-
-**RateLimitPolicy format errors:**
-
-If you get errors like "unknown field spec.limits.xxx.rates[0].duration", make sure your rate limits use the correct format:
-
-**Correct:**
-```yaml
-rates:
-- limit: 100
-  window: 60s    # or "1m", "5m", "1h", etc.
-```
-
-**Incorrect:**
-```yaml
-rates:
-- limit: 100
-  duration: 60
-  unit: second
-```
-
-
-## Documentation Architecture
-
-Documentation is fetched at runtime from upstream GitHub repos and cached in memory for 15 minutes. This keeps docs.kuadrant.io as the single source of truth.
-
-### How It Works
-
-- Resources are fetched from `raw.githubusercontent.com` on first request
-- Content is cached in memory with 15-minute TTL
-- If fetch fails, a fallback with link to docs.kuadrant.io is returned
-- No local docs to maintain
-
-### Adding New Resources
-
-Add an entry to `resourceMapping` in `resources.go`:
+Add to `resourceMapping` in `resources.go`:
 
 ```go
 "kuadrant://docs/newpolicy": {
@@ -851,24 +130,9 @@ Add an entry to `resourceMapping` in `resources.go`:
 },
 ```
 
-## Releases and Versioning
+## Releases
 
-See [RELEASE.md](RELEASE.md) for detailed release procedures.
-
-**Available versions:**
-- `:latest` - Tracks main branch (may be unstable)
-- `:1.2.3` - Specific version (recommended for production)
-- `:1.2` - Latest patch in minor version
-- `:1` - Latest release in major version
-
-**Creating releases:**
-```bash
-# Tag and push
-git tag -a v1.2.3 -m "Release v1.2.3"
-git push origin v1.2.3
-
-# GitHub automatically builds and publishes Docker images
-```
+See [RELEASE.md](RELEASE.md). Images are published to `ghcr.io/kuadrant/kuadrant-mcp-server`.
 
 ## Licence
 
