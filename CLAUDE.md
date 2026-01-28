@@ -133,7 +133,9 @@ Each tool handler follows this structure:
 - **RateLimitPolicy**: Rate limiting (kuadrant.io/v1)
 - **TokenRateLimitPolicy**: Token-based rate limiting for AI/LLM services (kuadrant.io/v1)
 - **AuthPolicy**: Authentication/authorization (kuadrant.io/v1)
+- **TelemetryPolicy**: Custom metrics labels via CEL (kuadrant.io/v1alpha1)
 - **Kuadrant CR**: Main operator configuration (kuadrant.io/v1beta1)
+- **PlanPolicy** (extension): Plan-based rate limiting for tiered services (extensions.kuadrant.io/v1alpha1)
 
 ### Error Handling
 
@@ -268,7 +270,7 @@ echo -e '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"202
 
 ## Current MCP Resources
 
-The server provides 11 documentation resources:
+The server provides 13 documentation resources:
 
 **Policy References:**
 - `kuadrant://docs/gateway-api` - Gateway API overview
@@ -277,8 +279,12 @@ The server provides 11 documentation resources:
 - `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy reference
 - `kuadrant://docs/authpolicy` - AuthPolicy reference
 - `kuadrant://docs/tlspolicy` - TLSPolicy reference
+- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy reference (custom metrics labels)
 - `kuadrant://docs/kuadrant` - Kuadrant CR reference
 - `kuadrant://docs/authorino-features` - Authorino authentication/authorization features
+
+**Extensions:**
+- `kuadrant://docs/planpolicy` - PlanPolicy extension (plan-based rate limiting)
 
 **Examples & Guides:**
 - `kuadrant://examples/basic-setup` - Basic API setup example
@@ -313,86 +319,70 @@ docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
 
 ## Updating Resource Documentation
 
-The MCP server includes documentation resources that are extracted from the official Kuadrant repositories. This documentation is kept up-to-date using automated scripts.
+Documentation is stored as markdown files in `docs/` and embedded into the binary at build time using Go's `//go:embed` directive.
+
+### Architecture
+
+```
+docs/                          # Committed to git, embedded at build time
+├── gateway-api.md
+├── dnspolicy.md
+├── ratelimitpolicy.md
+├── authpolicy.md
+├── tlspolicy.md
+├── tokenratelimitpolicy.md
+├── kuadrant.md
+├── authorino-features.md
+├── telemetrypolicy.md
+├── planpolicy.md
+├── troubleshooting.md
+└── examples/
+    ├── basic-setup.md
+    └── production-setup.md
+```
 
 ### Quick Update Process
 
-To update the documentation to the latest version:
-
 ```bash
-# 1. Extract latest docs from source repos (based on mkdocs.yml config)
+# 1. Extract latest docs from source repos
 ./update-docs.sh
 
-# 2. (Optional) Generate Go resource handlers from the extracted docs
-go run process-docs.go
-
-# 3. Review and integrate the generated code
-# The script generates resources-generated.go which you can review
-# and manually integrate into resources.go as needed
-```
-
-### How It Works
-
-The update process:
-1. **Reads mkdocs.yml** from docs.kuadrant.io to get the exact list of files being published
-2. **Clones source repos** (kuadrant-operator and authorino)
-3. **Extracts only the files** specified in mkdocs.yml configuration
-4. **Preserves directory structure** for easy navigation
-5. **Creates a summary** of all extracted documentation
-
-### Directory Structure After Update
-
-```
-extracted-docs/
-├── kuadrant-operator/   # Docs from kuadrant-operator repo
-│   ├── doc/reference/   # API reference documentation
-│   ├── doc/user-guides/ # Practical guides
-│   └── doc/overviews/   # Conceptual overviews
-├── authorino/          # Docs from authorino repo
-│   ├── docs/           # Core documentation
-│   └── docs/user-guides/ # Authorino-specific guides
-└── extraction-summary.txt # List of all extracted files
-```
-
-### Manual Integration
-
-After running the scripts, you can:
-1. Review `extracted-docs/` for the latest content
-2. Check `resources-generated.go` for auto-generated handlers
-3. Manually update `resources.go` with relevant changes
-4. Test the updated resources work correctly
-
-### Keeping Documentation Current
-
-Run periodically (e.g., weekly or when new features are released):
-
-```bash
-# Full documentation update
-./update-docs.sh
-
-# Check what changed
+# 2. Review extracted content
 cat extracted-docs/extraction-summary.txt
 
-# Generate and review Go code
-go run process-docs.go
-git diff resources-generated.go
+# 3. Update markdown files in docs/ as needed
+# Compare with extracted-docs/ and update relevant content
+
+# 4. Rebuild to embed changes
+go build -o kuadrant-mcp-server
+
+# 5. Test
+echo -e '...' | ./kuadrant-mcp-server 2>/dev/null | jq '.result.resources[].uri'
 ```
 
-### Important Files
+### Adding New Resources
 
-- **`update-docs.sh`** - Main extraction script that reads mkdocs.yml
-- **`process-docs.go`** - Converts markdown to Go resource handlers
-- **`extracted-docs/`** - Contains all extracted documentation (git-ignored)
-- **`resources-generated.go`** - Auto-generated resource handlers (git-ignored)
+1. Create markdown file in `docs/`
+2. Add mapping in `resources.go`:
+```go
+"kuadrant://docs/newpolicy": {"docs/newpolicy.md", "NewPolicy Reference", "Description"},
+```
+3. Update embed directive if needed (for new subdirectories)
+4. Rebuild
 
-### Note on Documentation Sources
+### Key Files
 
-The script automatically pulls from:
+- **`docs/`** - Markdown files for each resource (committed)
+- **`resources.go`** - Embed directive and resource mapping
+- **`update-docs.sh`** - Extracts docs from upstream repos
+- **`extracted-docs/`** - Temporary extraction output (git-ignored)
+
+### Documentation Sources
+
+The extraction script pulls from:
 1. **docs.kuadrant.io** - For mkdocs.yml configuration
-2. **kuadrant-operator** - For policy references and guides
-3. **authorino** - For authentication/authorization features
-
-This ensures documentation stays in sync with what's published on the official docs site.
+2. **kuadrant-operator** - Policy references and guides
+3. **authorino** - Authentication/authorization features
 
 ### Important: AuthConfig vs AuthPolicy Translation
 

@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that generates Kuadrant policy manifests i
 
 ```bash
 # Add the MCP server using Docker (available in all projects)
-claude mcp add -s user kuadrant "docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest"
+claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
 # Verify installation
 claude mcp list
@@ -24,7 +24,7 @@ claude  # Start new session, type /mcp to see available servers
 This MCP server generates Kuadrant-specific Kubernetes manifests:
 - Gateway resources with Kuadrant annotations
 - HTTPRoute configurations
-- Kuadrant policies (DNS, TLS, RateLimit, Auth)
+- Kuadrant policies (DNS, TLS, RateLimit, TokenRateLimit, Auth)
 
 All manifests are generated in YAML format, matching the actual Kuadrant CRD specifications.
 
@@ -153,8 +153,15 @@ The MCP server provides comprehensive documentation and examples through resourc
 - `kuadrant://docs/gateway-api` - Gateway API overview and Kuadrant integration
 - `kuadrant://docs/dnspolicy` - Complete DNSPolicy reference with examples
 - `kuadrant://docs/ratelimitpolicy` - RateLimitPolicy patterns and advanced usage
+- `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy for AI/LLM API management
 - `kuadrant://docs/authpolicy` - AuthPolicy authentication and authorization methods
 - `kuadrant://docs/tlspolicy` - TLSPolicy certificate management guide
+- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy for custom metrics labels
+- `kuadrant://docs/kuadrant` - Kuadrant CR (operator configuration)
+- `kuadrant://docs/authorino-features` - Authorino authentication/authorization features
+
+### Extensions
+- `kuadrant://docs/planpolicy` - PlanPolicy for plan-based rate limiting (gold/silver/bronze tiers)
 
 ### Example Resources
 - `kuadrant://examples/basic-setup` - Simple API with rate limiting and API key auth
@@ -170,7 +177,7 @@ Access these resources in Claude by asking questions like:
 
 **Note**: Claude may not always use resources automatically. To ensure resource usage:
 - Be specific about wanting documentation or examples
-- Reference Kuadrant policies by name (e.g., "RateLimitPolicy", "AuthPolicy")
+- Reference Kuadrant policies by name (e.g., "RateLimitPolicy", "TokenRateLimitPolicy", "AuthPolicy")
 - Ask for "complete examples" or "troubleshooting guide"
 
 ## Available Tools
@@ -390,6 +397,48 @@ spec:
             }
 ```
 
+### `create_tokenratelimitpolicy`
+Generate a Kuadrant TokenRateLimitPolicy manifest for AI/LLM API management.
+
+**Arguments:**
+- `name` (required): Policy name
+- `namespace` (required): Namespace
+- `targetRef` (required): Target resource reference
+- `limits`: Token-based rate limit configurations
+- `defaults`: Default token limits
+- `overrides`: Override token limits
+
+**Example Output:**
+```yaml
+apiVersion: kuadrant.io/v1
+kind: TokenRateLimitPolicy
+metadata:
+  name: llm-api-limits
+  namespace: production
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: llm-route
+  limits:
+    "gpt-4":
+      rates:
+      - limit: 10000
+        window: 60s
+      when:
+      - selector: request.headers.model
+        operator: eq
+        value: gpt-4
+    "gpt-3.5":
+      rates:
+      - limit: 50000
+        window: 60s
+      when:
+      - selector: request.headers.model
+        operator: eq
+        value: gpt-3.5-turbo
+```
+
 ## Kubernetes Integration
 
 For a complete Kubernetes workflow, you can combine this server with the Kubernetes MCP server.
@@ -449,11 +498,11 @@ Or using the binary directly:
 #### Claude Code CLI
 
 ```bash
-# Add Kuadrant server
-claude mcp add kuadrant /path/to/kuadrant-mcp-server -s user
+# Add Kuadrant server (using Docker)
+claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
 # Add Kubernetes server
-claude mcp add kubernetes npx @flux159/mcp-server-kubernetes -s user
+claude mcp add -s user kubernetes npx -- @flux159/mcp-server-kubernetes
 ```
 
 ### Safe Mode
@@ -599,6 +648,7 @@ spec:
 - DNSPolicy: `kuadrant.io/v1`
 - TLSPolicy: `kuadrant.io/v1alpha1`
 - RateLimitPolicy: `kuadrant.io/v1`
+- TokenRateLimitPolicy: `kuadrant.io/v1`
 - AuthPolicy: `kuadrant.io/v1`
 
 ## Claude Code CLI Setup
@@ -609,7 +659,7 @@ To use this server with Claude Code CLI:
 
 ```bash
 # Add using Docker image
-claude mcp add -s user kuadrant "docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest"
+claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
 # Verify installation
 claude mcp list
@@ -692,6 +742,9 @@ After setting up the MCP server, test it with these commands in Claude:
 
    # Per-user rate limiting
    Create a RateLimitPolicy for HTTPRoute 'api-routes' that allows 5 requests per 10 seconds for user 'alice' and 2 requests per 10 seconds for user 'bob' and apply this in my Kubernetes cluster with the kubernetes tool
+
+   # Token-based rate limiting for AI APIs
+   Create a TokenRateLimitPolicy for HTTPRoute 'llm-gateway' that limits GPT-4 to 10000 tokens per minute and GPT-3.5 to 50000 tokens per minute and apply this in my Kubernetes cluster with the kubernetes tool
 
    # Authentication
    Create an AuthPolicy for HTTPRoute 'api-routes' that requires JWT authentication from issuer 'https://auth.example.com' and apply this in my Kubernetes cluster with the kubernetes tool
@@ -778,25 +831,38 @@ rates:
 
 ## Updating Documentation
 
-The server includes embedded documentation from the official Kuadrant repositories. To update to the latest docs:
+Documentation is stored as markdown files in `docs/` and embedded into the binary at build time using Go's `//go:embed` directive.
+
+### Quick Update
 
 ```bash
-# Extract latest documentation from source repos
+# 1. Fetch latest docs from upstream repos
 ./update-docs.sh
 
-# (Optional) Generate Go code from the extracted docs
-go run process-docs.go
+# 2. Review extracted content
+cat extracted-docs/extraction-summary.txt
 
-# Review and integrate changes as needed
+# 3. Update markdown files in docs/ as needed
+# Compare with extracted-docs/ and update
+
+# 4. Rebuild to embed changes
+go build -o kuadrant-mcp-server
 ```
 
-The update script:
-- Reads the mkdocs.yml configuration from docs.kuadrant.io
-- Extracts only the files actually published on the docs site
-- Preserves the original directory structure
-- Creates a summary of all extracted files
+### Architecture
 
-For more details, see [UPDATE_DOCS.md](UPDATE_DOCS.md).
+- **`docs/`** - Markdown files for each resource (committed to git)
+- **`//go:embed`** - Files embedded into binary at build time
+- **Single binary** - No external files needed at runtime
+
+### Adding New Resources
+
+1. Create markdown file: `docs/newpolicy.md`
+2. Add mapping in `resources.go`:
+```go
+"kuadrant://docs/newpolicy": {"docs/newpolicy.md", "NewPolicy Reference", "Description"},
+```
+3. Rebuild: `go build -o kuadrant-mcp-server`
 
 ## Releases and Versioning
 
