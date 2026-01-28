@@ -147,28 +147,26 @@ Or if running the binary directly:
 
 ## Available Resources
 
-The MCP server provides comprehensive documentation and examples through resources:
+Documentation is fetched from upstream GitHub repos (kuadrant-operator, authorino) and cached for 15 minutes. This keeps docs.kuadrant.io as the single source of truth.
 
-### Documentation Resources
-- `kuadrant://docs/gateway-api` - Gateway API overview and Kuadrant integration
-- `kuadrant://docs/dnspolicy` - Complete DNSPolicy reference with examples
-- `kuadrant://docs/ratelimitpolicy` - RateLimitPolicy patterns and advanced usage
-- `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy for AI/LLM API management
-- `kuadrant://docs/authpolicy` - AuthPolicy authentication and authorization methods
-- `kuadrant://docs/tlspolicy` - TLSPolicy certificate management guide
-- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy for custom metrics labels
-- `kuadrant://docs/kuadrant` - Kuadrant CR (operator configuration)
-- `kuadrant://docs/authorino-features` - Authorino authentication/authorization features
+### Policy References
+- `kuadrant://docs/gateway-api` - Gateway API overview
+- `kuadrant://docs/dnspolicy` - DNSPolicy reference
+- `kuadrant://docs/ratelimitpolicy` - RateLimitPolicy reference
+- `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy reference
+- `kuadrant://docs/authpolicy` - AuthPolicy reference
+- `kuadrant://docs/tlspolicy` - TLSPolicy reference
+- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy reference
+- `kuadrant://docs/kuadrant` - Kuadrant CR reference
+- `kuadrant://docs/authorino-features` - Authorino features
 
 ### Extensions
-- `kuadrant://docs/planpolicy` - PlanPolicy for plan-based rate limiting (gold/silver/bronze tiers)
+- `kuadrant://docs/planpolicy` - PlanPolicy (plan-based rate limiting)
 
-### Example Resources
-- `kuadrant://examples/basic-setup` - Simple API with rate limiting and API key auth
-- `kuadrant://examples/production-setup` - Full production setup with TLS, DNS, JWT auth
-
-### Troubleshooting
-- `kuadrant://troubleshooting` - Common issues, debugging techniques, and solutions
+### User Guides
+- `kuadrant://docs/secure-protect-connect` - Full walkthrough
+- `kuadrant://docs/simple-ratelimiting` - Simple rate limiting guide
+- `kuadrant://docs/auth-for-developers` - Auth for app devs
 
 Access these resources in Claude by asking questions like:
 - "Show me the Kuadrant rate limiting documentation"
@@ -829,40 +827,29 @@ rates:
 ```
 
 
-## Updating Documentation
+## Documentation Architecture
 
-Documentation is stored as markdown files in `docs/` and embedded into the binary at build time using Go's `//go:embed` directive.
+Documentation is fetched at runtime from upstream GitHub repos and cached in memory for 15 minutes. This keeps docs.kuadrant.io as the single source of truth.
 
-### Quick Update
+### How It Works
 
-```bash
-# 1. Fetch latest docs from upstream repos
-./update-docs.sh
-
-# 2. Review extracted content
-cat extracted-docs/extraction-summary.txt
-
-# 3. Update markdown files in docs/ as needed
-# Compare with extracted-docs/ and update
-
-# 4. Rebuild to embed changes
-go build -o kuadrant-mcp-server
-```
-
-### Architecture
-
-- **`docs/`** - Markdown files for each resource (committed to git)
-- **`//go:embed`** - Files embedded into binary at build time
-- **Single binary** - No external files needed at runtime
+- Resources are fetched from `raw.githubusercontent.com` on first request
+- Content is cached in memory with 15-minute TTL
+- If fetch fails, a fallback with link to docs.kuadrant.io is returned
+- No local docs to maintain
 
 ### Adding New Resources
 
-1. Create markdown file: `docs/newpolicy.md`
-2. Add mapping in `resources.go`:
+Add an entry to `resourceMapping` in `resources.go`:
+
 ```go
-"kuadrant://docs/newpolicy": {"docs/newpolicy.md", "NewPolicy Reference", "Description"},
+"kuadrant://docs/newpolicy": {
+    url:         "https://raw.githubusercontent.com/Kuadrant/kuadrant-operator/main/doc/reference/newpolicy.md",
+    name:        "NewPolicy Reference",
+    description: "Description",
+    fallback:    "# NewPolicy\n\nSee: https://docs.kuadrant.io/...",
+},
 ```
-3. Rebuild: `go build -o kuadrant-mcp-server`
 
 ## Releases and Versioning
 

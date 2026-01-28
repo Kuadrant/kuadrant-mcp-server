@@ -270,7 +270,7 @@ echo -e '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"202
 
 ## Current MCP Resources
 
-The server provides 13 documentation resources:
+The server provides 13 documentation resources, fetched from upstream GitHub repos:
 
 **Policy References:**
 - `kuadrant://docs/gateway-api` - Gateway API overview
@@ -279,19 +279,19 @@ The server provides 13 documentation resources:
 - `kuadrant://docs/tokenratelimitpolicy` - TokenRateLimitPolicy reference
 - `kuadrant://docs/authpolicy` - AuthPolicy reference
 - `kuadrant://docs/tlspolicy` - TLSPolicy reference
-- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy reference (custom metrics labels)
+- `kuadrant://docs/telemetrypolicy` - TelemetryPolicy reference
 - `kuadrant://docs/kuadrant` - Kuadrant CR reference
 - `kuadrant://docs/authorino-features` - Authorino authentication/authorization features
 
 **Extensions:**
 - `kuadrant://docs/planpolicy` - PlanPolicy extension (plan-based rate limiting)
 
-**Examples & Guides:**
-- `kuadrant://examples/basic-setup` - Basic API setup example
-- `kuadrant://examples/production-setup` - Production deployment example
-- `kuadrant://troubleshooting` - Common issues and debugging
+**User Guides:**
+- `kuadrant://docs/secure-protect-connect` - Full walkthrough
+- `kuadrant://docs/simple-ratelimiting` - Simple rate limiting guide
+- `kuadrant://docs/auth-for-developers` - Auth for app devs and platform engineers
 
-These are implemented in `resources.go` and can be updated via the documentation extraction scripts.
+Resources are fetched from raw.githubusercontent.com and cached for 15 minutes.
 
 ## Potential Enhancements
 
@@ -317,83 +317,32 @@ Users can run directly without building:
 docker run -i --rm ghcr.io/jasonmadigan/kuadrant-mcp-server:latest
 ```
 
-## Updating Resource Documentation
+## Resource Documentation Architecture
 
-Documentation is stored as markdown files in `docs/` and embedded into the binary at build time using Go's `//go:embed` directive.
+Documentation is fetched at runtime from upstream GitHub repos (raw.githubusercontent.com) and cached in memory for 15 minutes.
 
-### Architecture
+### How It Works
 
-```
-docs/                          # Committed to git, embedded at build time
-├── gateway-api.md
-├── dnspolicy.md
-├── ratelimitpolicy.md
-├── authpolicy.md
-├── tlspolicy.md
-├── tokenratelimitpolicy.md
-├── kuadrant.md
-├── authorino-features.md
-├── telemetrypolicy.md
-├── planpolicy.md
-├── troubleshooting.md
-└── examples/
-    ├── basic-setup.md
-    └── production-setup.md
-```
-
-### Quick Update Process
-
-```bash
-# 1. Extract latest docs from source repos
-./update-docs.sh
-
-# 2. Review extracted content
-cat extracted-docs/extraction-summary.txt
-
-# 3. Update markdown files in docs/ as needed
-# Compare with extracted-docs/ and update relevant content
-
-# 4. Rebuild to embed changes
-go build -o kuadrant-mcp-server
-
-# 5. Test
-echo -e '...' | ./kuadrant-mcp-server 2>/dev/null | jq '.result.resources[].uri'
-```
+1. When a resource is requested, the server fetches from the raw GitHub URL
+2. Content is cached in memory with a 15-minute TTL
+3. If fetch fails (network issues, etc.), a fallback with a link to docs.kuadrant.io is returned
+4. No local files to maintain - docs.kuadrant.io is the single source of truth
 
 ### Adding New Resources
 
-1. Create markdown file in `docs/`
-2. Add mapping in `resources.go`:
+Add an entry to `resourceMapping` in `resources.go`:
+
 ```go
-"kuadrant://docs/newpolicy": {"docs/newpolicy.md", "NewPolicy Reference", "Description"},
+"kuadrant://docs/newpolicy": {
+    url:         "https://raw.githubusercontent.com/Kuadrant/kuadrant-operator/main/doc/reference/newpolicy.md",
+    name:        "NewPolicy Reference",
+    description: "Description of the new policy",
+    fallback:    "# NewPolicy\n\nSee: https://docs.kuadrant.io/latest/kuadrant-operator/doc/reference/newpolicy/",
+},
 ```
-3. Update embed directive if needed (for new subdirectories)
-4. Rebuild
-
-### Key Files
-
-- **`docs/`** - Markdown files for each resource (committed)
-- **`resources.go`** - Embed directive and resource mapping
-- **`update-docs.sh`** - Extracts docs from upstream repos
-- **`extracted-docs/`** - Temporary extraction output (git-ignored)
 
 ### Documentation Sources
 
-The extraction script pulls from:
-1. **docs.kuadrant.io** - For mkdocs.yml configuration
-2. **kuadrant-operator** - Policy references and guides
-3. **authorino** - Authentication/authorization features
-
-### Important: AuthConfig vs AuthPolicy Translation
-
-When processing Authorino documentation, the `process-docs.go` script automatically translates:
-- `AuthConfig` → `AuthPolicy`
-- `authconfig` → `authpolicy`
-- `authconfigs` → `authpolicies`
-
-This is because:
-- **AuthConfig** is used in standalone Authorino deployments
-- **AuthPolicy** is the Kuadrant equivalent (what users actually use)
-- They are functionally equivalent but AuthPolicy is the correct term in Kuadrant context
-
-This translation is done automatically in the `extractKeyContent()` function in `process-docs.go`.
+Resources are fetched from:
+- **kuadrant-operator** - Policy references and user guides
+- **authorino** - Authentication/authorization features
