@@ -1,8 +1,6 @@
 # Kuadrant MCP Server
 
-A Model Context Protocol (MCP) server that generates Kuadrant policy manifests. Designed to work alongside [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes) for applying resources to clusters.
-
-![Kuadrant MCP Server Demo](kuadrant-mcp-server-demo.gif)
+A Model Context Protocol (MCP) server for debugging Kuadrant installations. Provides structured debugging prompts and embedded troubleshooting guides. Designed to work alongside a Kubernetes MCP server (e.g. [mcp-server-kubernetes](https://github.com/Flux159/mcp-server-kubernetes)) for cluster interaction.
 
 ## Quick Start
 
@@ -60,57 +58,57 @@ docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 }
 ```
 
-## Tools
+## Prompts
 
-| Tool | Description |
-|------|-------------|
-| `create_gateway` | Gateway manifest with Kuadrant annotations |
-| `create_httproute` | HTTPRoute manifest |
-| `create_dnspolicy` | DNSPolicy for DNS management |
-| `create_tlspolicy` | TLSPolicy for certificate management |
-| `create_ratelimitpolicy` | RateLimitPolicy for rate limiting |
-| `create_tokenratelimitpolicy` | TokenRateLimitPolicy for AI/LLM APIs |
-| `create_authpolicy` | AuthPolicy for authentication/authorisation |
+Structured debugging workflows that guide the LLM through diagnostic steps using a companion Kubernetes MCP server.
 
-**Rate limit format**: Use `limit` and `window` fields (e.g., `"limit": 100, "window": "60s"`).
+| Prompt | Description |
+|--------|-------------|
+| `debug-installation` | Verify operator, CRDs, Kuadrant CR, Istio, Limitador, Authorino |
+| `debug-gateway` | Gateway not accepting traffic, listeners, Istio proxy |
+| `debug-dnspolicy` | DNS records not created, provider config, zone issues |
+| `debug-tlspolicy` | Certificates not issuing, issuer problems, cert-manager |
+| `debug-ratelimitpolicy` | Rate limits not enforced, Limitador health, targeting |
+| `debug-authpolicy` | Auth not enforced, Authorino health, rule matching |
+| `debug-telemetrypolicy` | Custom metrics not appearing, CEL expression issues |
+| `debug-tokenratelimitpolicy` | Token-based rate limiting not working |
+| `debug-policy-status` | Interpret status conditions on any policy |
+| `debug-policy-conflicts` | Override/default conflicts, policy hierarchy |
 
-### Example Prompts
+### Example Usage
 
 ```
-Create a Gateway named 'api-gateway' in namespace 'production' with HTTPS on port 443
+Debug my Kuadrant installation in the kuadrant-system namespace
 
-Create a RateLimitPolicy for HTTPRoute 'api-route' that limits to 100 requests per minute
+Why isn't my RateLimitPolicy 'api-limits' being enforced?
 
-Set up an AuthPolicy requiring JWT auth from https://auth.example.com
+Help me understand the status conditions on my AuthPolicy
 
-Show me the Kuadrant rate limiting documentation
+My DNSPolicy isn't creating DNS records - what's wrong?
 
-Help me configure DNS with Route53 for my gateway
+Check if there are policy conflicts in the production namespace
 ```
 
 ## Resources
 
-Documentation is fetched from upstream repos and cached for 15 minutes.
+Embedded debugging guides bundled into the binary. No network access required.
 
 | Resource | Description |
 |----------|-------------|
-| `kuadrant://docs/gateway-api` | Gateway API overview |
-| `kuadrant://docs/dnspolicy` | DNSPolicy reference |
-| `kuadrant://docs/ratelimitpolicy` | RateLimitPolicy reference |
-| `kuadrant://docs/tokenratelimitpolicy` | TokenRateLimitPolicy reference |
-| `kuadrant://docs/authpolicy` | AuthPolicy reference |
-| `kuadrant://docs/tlspolicy` | TLSPolicy reference |
-| `kuadrant://docs/telemetrypolicy` | TelemetryPolicy reference |
-| `kuadrant://docs/kuadrant` | Kuadrant CR reference |
-| `kuadrant://docs/authorino-features` | Authorino features |
-| `kuadrant://docs/planpolicy` | PlanPolicy extension |
-| `kuadrant://docs/secure-protect-connect` | Full walkthrough |
-| `kuadrant://docs/simple-ratelimiting` | Rate limiting guide |
-| `kuadrant://docs/auth-for-developers` | Auth guide |
+| `kuadrant://debug/installation` | Operator, CRDs, Kuadrant CR, Istio health |
+| `kuadrant://debug/gateway-istio` | Istio gateway proxy, listeners, envoy config |
+| `kuadrant://debug/dnspolicy` | DNS provider, zone config, record creation |
+| `kuadrant://debug/tlspolicy` | cert-manager, issuer, certificate lifecycle |
+| `kuadrant://debug/ratelimitpolicy` | Limitador health, rate limit enforcement |
+| `kuadrant://debug/authpolicy` | Authorino health, auth rule matching |
+| `kuadrant://debug/telemetrypolicy` | Custom metrics, CEL expressions |
+| `kuadrant://debug/tokenratelimitpolicy` | Token-based rate limiting |
+| `kuadrant://debug/status-conditions` | All status conditions across all policy types |
+| `kuadrant://debug/policy-conflicts` | Override/default hierarchy, multi-policy resolution |
 
 ## Kubernetes Integration
 
-Combine with mcp-server-kubernetes for a complete workflow:
+Combine with a Kubernetes MCP server for a complete debugging workflow:
 
 ```bash
 # Add both servers
@@ -118,31 +116,7 @@ claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-
 claude mcp add -s user kubernetes npx -- @flux159/mcp-server-kubernetes
 ```
 
-Then ask Claude to generate and deploy policies in one step.
-
-## API Versions
-
-| Resource | API Version |
-|----------|-------------|
-| Gateway/HTTPRoute | `gateway.networking.k8s.io/v1` |
-| DNSPolicy | `kuadrant.io/v1` |
-| TLSPolicy | `kuadrant.io/v1alpha1` |
-| RateLimitPolicy | `kuadrant.io/v1` |
-| TokenRateLimitPolicy | `kuadrant.io/v1` |
-| AuthPolicy | `kuadrant.io/v1` |
-
-## Adding Resources
-
-Add to `resourceMapping` in `resources.go`:
-
-```go
-"kuadrant://docs/newpolicy": {
-    url:         "https://raw.githubusercontent.com/Kuadrant/kuadrant-operator/main/doc/reference/newpolicy.md",
-    name:        "NewPolicy Reference",
-    description: "Description",
-    fallback:    "# NewPolicy\n\nSee: https://docs.kuadrant.io/...",
-},
-```
+The debugging prompts direct the LLM to use the Kubernetes MCP server for cluster queries — checking pod status, reading resource conditions, fetching events, and reading logs.
 
 ## Releases
 
