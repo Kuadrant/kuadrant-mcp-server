@@ -4,9 +4,15 @@ A Model Context Protocol (MCP) server for debugging Kuadrant installations. Prov
 
 ## Quick Start
 
+### From source
+
 ```bash
-# Add the MCP server (available in all projects)
-claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
+# Build
+git clone https://github.com/kuadrant/kuadrant-mcp-server && cd kuadrant-mcp-server
+go build -o kuadrant-mcp-server
+
+# Add to Claude Code (available in all projects)
+claude mcp add -s user kuadrant -- /path/to/kuadrant-mcp-server
 
 # Verify
 claude mcp list
@@ -15,37 +21,46 @@ claude mcp list
 claude
 ```
 
-## Installation
+### Docker
 
 ```bash
-# Docker (recommended)
-docker pull ghcr.io/kuadrant/kuadrant-mcp-server:latest
+# Add to Claude Code
+claude mcp add -s user kuadrant docker -- run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 
-# Go
-go install github.com/kuadrant/kuadrant-mcp-server@latest
-
-# From source
-git clone https://github.com/kuadrant/kuadrant-mcp-server && cd kuadrant-mcp-server
-go build -o kuadrant-mcp-server
+# Verify
+claude mcp list
 ```
 
 ## Usage
 
+The server supports three transport modes:
+
 ```bash
-# stdio (default)
+# stdio (default) — used by Claude Code and Claude Desktop
 ./kuadrant-mcp-server
 
-# SSE transport
+# SSE transport — for web-based MCP clients
 ./kuadrant-mcp-server -transport sse -addr :8080
 
-# HTTP transport
+# HTTP transport — StreamableHTTP for modern web clients
 ./kuadrant-mcp-server -transport http -addr :8080
-
-# Docker
-docker run -i --rm ghcr.io/kuadrant/kuadrant-mcp-server:latest
 ```
 
-### MCP Client Configuration
+### Claude Desktop Configuration
+
+Add to your Claude Desktop `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "kuadrant": {
+      "command": "/path/to/kuadrant-mcp-server"
+    }
+  }
+}
+```
+
+Or using Docker:
 
 ```json
 {
