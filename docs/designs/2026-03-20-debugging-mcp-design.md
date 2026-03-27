@@ -19,6 +19,88 @@ Pivot the kuadrant-mcp-server from a manifest-generation MCP to a debugging-focu
 - Runtime doc fetching from upstream GitHub repos
 - Supporting gateway providers other than Istio (may be added later)
 
+## Use Cases
+
+### Platform Admin: DNS records not being created for gateways
+
+**Persona:** Platform engineer responsible for Kuadrant installation and infrastructure.
+
+**Scenario:** A DNSPolicy targeting a Gateway is created but no DNS records appear in Route53. The policy may show Accepted but records are missing from the hosted zone.
+
+**Prompt:** `debug-dnspolicy` with `policy-name` argument.
+
+**Diagnostic flow:**
+1. Check DNSPolicy .status.conditions (Accepted/Enforced)
+2. Verify target Gateway exists and listeners have explicit hostnames
+3. Check DNS provider credentials Secret exists and has correct Route53 permissions (route53:ChangeResourceRecordSets, route53:ListHostedZones)
+4. List DNSRecord CRs — these are the intermediate resources DNSPolicy creates. Check their .status for provider-specific errors
+5. Check kuadrant-operator logs for DNS reconciliation errors
+6. Verify Route53 hosted zone covers the listener hostnames
+
+**Common fixes:**
+- Credentials Secret missing or in wrong namespace
+- IAM permissions insufficient for Route53 operations
+- Gateway listeners missing explicit hostnames
+- Hosted zone doesn't cover the listener hostnames
+- targetRef.group missing from the policy
+
+**Resources used:** `kuadrant://debug/dnspolicy`, `kuadrant://debug/status-conditions`
+
+### Developer: RateLimitPolicy not enforcing rate limits
+
+**Persona:** Application developer creating policies for their services.
+
+**Scenario:** A RateLimitPolicy is created targeting a Gateway or HTTPRoute, but traffic is not being rate limited. Requests that should return 429 are passing through.
+
+**Prompt:** `debug-ratelimitpolicy` with `policy-name` argument.
+
+**Diagnostic flow:**
+1. Check RateLimitPolicy .status.conditions (Accepted/Enforced)
+2. Verify targetRef points to an existing Gateway or HTTPRoute with correct kind, name, and group
+3. Inspect rate limit configuration — rates must have limit (int) and window (duration string)
+4. Check for policy conflicts — multiple policies targeting the same resource, defaults vs overrides hierarchy
+5. Verify Limitador pods are running and processing the policy (check logs)
+6. Test by sending requests exceeding the limit within the window
+7. Check Istio/Envoy — verify EnvoyFilter resources exist for the policy
+
+**Common fixes:**
+- targetRef.group missing (should be "gateway.networking.k8s.io")
+- targetRef points to wrong or non-existent resource
+- Policy Accepted but not Enforced — Limitador not running
+- Targeting Gateway when per-route limiting is needed (should target HTTPRoute)
+- "when" conditions too restrictive — limits never triggered
+- Gateway-level overrides taking precedence over route-level policy
+- Limitador crashlooping due to config errors or Redis connectivity
+
+**Resources used:** `kuadrant://debug/ratelimitpolicy`, `kuadrant://debug/status-conditions`, `kuadrant://debug/policy-conflicts`
+
+### Developer: AuthPolicy TargetNotFound Error
+
+**Persona:** Application developer adding authentication to their service.
+
+**Scenario:** Developer applies an AuthPolicy and sees `Accepted: False` with reason `TargetNotFound` and message "target prod-web was not found"
+
+**Prompt:** `debug-authpolicy` with `policy-name` argument.
+
+**Diagnostic flow:**
+1. Check AuthPolicy .status.conditions and read the .message field carefully
+2. If message says "was not found" or "not found", the targetRef structure is correct but the Gateway/HTTPRoute doesn't exist
+3. Use Kubernetes MCP to check if the target Gateway/HTTPRoute exists
+4. Verify the resource name matches exactly (case-sensitive)
+5. Confirm AuthPolicy and target are in the same namespace
+6. If targetRef is missing required fields (group/kind/name), add them
+
+**Common fixes:**
+- Gateway/HTTPRoute doesn't exist yet — create it first
+- Typo in targetRef.name field
+- Missing targetRef.group field (should be "gateway.networking.k8s.io")
+- AuthPolicy and target in different namespaces
+- Target resource exists but isn't ready yet
+
+**Key insight:** The embedded debugging guide clarifies that "not found" messages are about missing resources, not malformed YAML structure - preventing engineers from debugging the wrong thing.
+
+**Resources used:** `kuadrant://debug/authpolicy`, `kuadrant://debug/status-conditions`
+
 ## Design
 
 ### Backwards Compatibility
@@ -135,61 +217,6 @@ Arguments with no default instruct the LLM to ask the user if not provided.
 - **Unit tests**: Prompt handlers return expected output structure for given arguments. Resource handlers serve correct embedded content for each URI.
 - **Integration tests**: MCP protocol-level tests — initialize server, call `prompts/list`, invoke a prompt, call `resources/list`, read a resource. Verify JSON-RPC responses.
 - **Manual testing**: End-to-end with Claude Code + Kubernetes MCP server against a live cluster.
-
-## Use Cases
-
-### Platform Admin: DNS records not being created for gateways
-
-**Persona:** Platform engineer responsible for Kuadrant installation and infrastructure.
-
-**Scenario:** A DNSPolicy targeting a Gateway is created but no DNS records appear in Route53. The policy may show Accepted but records are missing from the hosted zone.
-
-**Prompt:** `debug-dnspolicy` with `policy-name` argument.
-
-**Diagnostic flow:**
-1. Check DNSPolicy .status.conditions (Accepted/Enforced)
-2. Verify target Gateway exists and listeners have explicit hostnames
-3. Check DNS provider credentials Secret exists and has correct Route53 permissions (route53:ChangeResourceRecordSets, route53:ListHostedZones)
-4. List DNSRecord CRs — these are the intermediate resources DNSPolicy creates. Check their .status for provider-specific errors
-5. Check kuadrant-operator logs for DNS reconciliation errors
-6. Verify Route53 hosted zone covers the listener hostnames
-
-**Common fixes:**
-- Credentials Secret missing or in wrong namespace
-- IAM permissions insufficient for Route53 operations
-- Gateway listeners missing explicit hostnames
-- Hosted zone doesn't cover the listener hostnames
-- targetRef.group missing from the policy
-
-**Resources used:** `kuadrant://debug/dnspolicy`, `kuadrant://debug/status-conditions`
-
-### Developer: RateLimitPolicy not enforcing rate limits
-
-**Persona:** Application developer creating policies for their services.
-
-**Scenario:** A RateLimitPolicy is created targeting a Gateway or HTTPRoute, but traffic is not being rate limited. Requests that should return 429 are passing through.
-
-**Prompt:** `debug-ratelimitpolicy` with `policy-name` argument.
-
-**Diagnostic flow:**
-1. Check RateLimitPolicy .status.conditions (Accepted/Enforced)
-2. Verify targetRef points to an existing Gateway or HTTPRoute with correct kind, name, and group
-3. Inspect rate limit configuration — rates must have limit (int) and window (duration string)
-4. Check for policy conflicts — multiple policies targeting the same resource, defaults vs overrides hierarchy
-5. Verify Limitador pods are running and processing the policy (check logs)
-6. Test by sending requests exceeding the limit within the window
-7. Check Istio/Envoy — verify EnvoyFilter resources exist for the policy
-
-**Common fixes:**
-- targetRef.group missing (should be "gateway.networking.k8s.io")
-- targetRef points to wrong or non-existent resource
-- Policy Accepted but not Enforced — Limitador not running
-- Targeting Gateway when per-route limiting is needed (should target HTTPRoute)
-- "when" conditions too restrictive — limits never triggered
-- Gateway-level overrides taking precedence over route-level policy
-- Limitador crashlooping due to config errors or Redis connectivity
-
-**Resources used:** `kuadrant://debug/ratelimitpolicy`, `kuadrant://debug/status-conditions`, `kuadrant://debug/policy-conflicts`
 
 ## Open Questions
 
