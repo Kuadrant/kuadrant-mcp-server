@@ -55,7 +55,7 @@ gh release create v1.2.3 \
 ### 3. Automated Publishing
 
 Once the release is created, GitHub Actions will automatically:
-1. Build multi-platform Docker images (linux/amd64, linux/arm64)
+1. Build multi-platform Docker images (linux/amd64, linux/arm64, linux/ppc64le)
 2. Push to GitHub Container Registry with tags:
    - `ghcr.io/kuadrant/kuadrant-mcp-server:1.2.3` (exact version)
    - `ghcr.io/kuadrant/kuadrant-mcp-server:1.2` (minor version)
@@ -123,9 +123,9 @@ Check the [Actions tab](https://github.com/kuadrant/kuadrant-mcp-server/actions)
 - Never force-push or delete published tags
 
 ### Multi-platform Issues
-The workflow builds for both `linux/amd64` and `linux/arm64`. If one fails:
+The workflow builds for `linux/amd64`, `linux/arm64` and `linux/ppc64le`. If one fails:
 1. Check architecture-specific dependencies
-2. Test locally with: `docker buildx build --platform linux/arm64 .`
+2. Test locally with: `docker buildx build --platform linux/arm64 .` or  `docker buildx build --platform linux/ppc64le .`
 
 ## Pre-release Checklist
 
